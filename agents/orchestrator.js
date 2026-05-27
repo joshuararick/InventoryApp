@@ -25,10 +25,12 @@ const path = require('path');
 const { execSync } = require('child_process');
 const { buildFeature } = require('./builder');
 const { generateIdeas } = require('./ideator');
+const { runAgentSwarm } = require('./swarm');
 
 const ROOT = path.resolve(__dirname, '..');
 const BACKLOG_PATH = path.resolve(__dirname, 'backlog.json');
-const INTERVAL_MS = (Number(process.env.INTERVAL_MINUTES) || 30) * 60 * 1000;
+const STATUS_PATH = path.resolve(__dirname, 'status.json');
+const INTERVAL_MS = (Number(process.env.INTERVAL_MINUTES) || 10) * 60 * 1000;
 const runOnce = process.argv.includes('--once');
 
 // ── Backlog I/O ───────────────────────────────────────────────────────────────
@@ -97,6 +99,15 @@ function commitAndPush(feature, log) {
   }
 }
 
+// ── Agent status (shown on Dashboard) ────────────────────────────────────────
+
+function updateStatus(patch) {
+  let status = {};
+  try { status = JSON.parse(fs.readFileSync(STATUS_PATH, 'utf8')); } catch {}
+  Object.assign(status, patch, { updatedAt: new Date().toISOString() });
+  fs.writeFileSync(STATUS_PATH, JSON.stringify(status, null, 2) + '\n', 'utf8');
+}
+
 // ── Idea injection ────────────────────────────────────────────────────────────
 
 function makeId() {
@@ -110,14 +121,21 @@ function maxPriority(backlog) {
 
 async function topUpBacklog(backlog, log) {
   const pendingCount = backlog.features.filter(f => f.status === 'pending').length;
-  if (pendingCount >= 4) {
-    log(`[orchestrator] Backlog has ${pendingCount} pending — skipping ideator`);
+  if (pendingCount >= 5) {
+    log(`[orchestrator] Backlog has ${pendingCount} pending — skipping ideation`);
     return;
   }
 
-  const ideas = await generateIdeas(backlog.features, backlog.completed, log);
+  // Use swarm of specialized agents instead of single ideator
+  updateStatus({ swarm: 'running', swarmStarted: new Date().toISOString() });
+  const swarmIdeas = await runAgentSwarm(backlog.completed, log);
+
+  // Also get ideas from general ideator
+  const generalIdeas = await generateIdeas(backlog.features, backlog.completed, log);
+
+  const allIdeas = [...swarmIdeas, ...generalIdeas];
   let pri = maxPriority(backlog) + 1;
-  for (const idea of ideas) {
+  for (const idea of allIdeas) {
     if (!idea.title || !idea.description) continue;
     backlog.features.push({
       id: makeId(),
@@ -129,8 +147,9 @@ async function topUpBacklog(backlog, log) {
       generatedByAI: true,
     });
     backlog.ideas_pool.push({ title: idea.title, addedAt: new Date().toISOString() });
-    log(`[orchestrator] Added idea: "${idea.title}"`);
+    log(`[orchestrator] Queued: "${idea.title}"`);
   }
+  updateStatus({ swarm: 'idle', lastSwarmIdeas: allIdeas.map(i => i.title) });
   saveBacklog(backlog);
 }
 
@@ -151,15 +170,18 @@ async function runCycle() {
 
   log(`[orchestrator] Building: ${feature.title} (${feature.id})`);
   markBuilding(backlog, feature);
+  updateStatus({ building: feature.title, buildStarted: new Date().toISOString(), lastError: null });
 
   try {
     const tokens = await buildFeature(feature, log);
     markDone(loadBacklog(), feature, tokens);
     log(`[orchestrator] ✓ Completed: ${feature.title}`);
+    updateStatus({ building: null, lastBuilt: feature.title, lastBuiltAt: new Date().toISOString() });
     commitAndPush(feature, log);
   } catch (err) {
     log(`[orchestrator] ✗ Failed: ${err.message}`);
     markFailed(loadBacklog(), feature, err.message);
+    updateStatus({ building: null, lastError: err.message });
   }
 
   // Top up backlog after each build

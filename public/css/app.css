@@ -302,7 +302,7 @@ nav button .icon { font-size: 20px; }
   border-radius: var(--radius);
   padding: 14px;
   margin-bottom: 14px;
-  background: #fff;
+  background: var(--surface);
   box-shadow: var(--shadow);
 }
 .dash-block-title { font-size: 12px; font-weight: 600; color: var(--gray-400); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 10px; }
@@ -347,3 +347,20 @@ nav button .icon { font-size: 20px; }
 .dash-task-row:last-child { border-bottom: none; }
 .dash-task-due { font-size: 12px; color: var(--gray-400); }
 .overdue-text { color: var(--danger); font-weight: 500; }
+
+/* ── Agent Swarm Panel ── */
+.agent-status-row { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 10px; }
+.agent-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.agent-dot.building { background: var(--brand); animation: pulse 1.2s infinite; }
+.agent-dot.idle { background: var(--gray-400); }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+.agent-swarm-active { font-size: 12px; color: var(--brand); font-weight: 600; margin-bottom: 8px; }
+.agent-error { font-size: 12px; color: var(--danger); margin-bottom: 8px; }
+.agent-section-title { font-size: 11px; font-weight: 600; color: var(--gray-400); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+.agent-queue-item { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 5px 0; border-bottom: 1px solid var(--border-soft); }
+.agent-queue-item:last-child { border-bottom: none; }
+.agent-queue-num { width: 18px; height: 18px; border-radius: 50%; background: var(--surface-alt); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--gray-600); }
+.agent-cat { margin-left: auto; font-size: 11px; color: var(--gray-400); background: var(--surface-alt); padding: 2px 6px; border-radius: 4px; }
+.agent-done-item { font-size: 13px; color: var(--success); padding: 3px 0; }
+.agent-offline { font-size: 13px; color: var(--gray-400); }
+.agent-updated { font-size: 11px; color: var(--gray-400); margin-top: 8px; text-align: right; }

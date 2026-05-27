@@ -79,4 +79,43 @@ async function loadDashboard() {
       return `<div class="dash-task-row"><span>${t.title}</span><span class="dash-task-due">${label}</span></div>`;
     }).join('');
   }
+
+  // Load agent swarm status
+  loadAgentStatus();
 }
+
+async function loadAgentStatus() {
+  const el = document.getElementById('dash-agent-status');
+  if (!el) return;
+  let s;
+  try { s = await api('GET', '/api/agents/status'); } catch { el.innerHTML = '<div class="agent-offline">Agent offline — run npm run agent</div>'; return; }
+
+  const statusDot = s.building ? '<span class="agent-dot building"></span>' : '<span class="agent-dot idle"></span>';
+  const statusText = s.building
+    ? `Building: <strong>${s.building}</strong>`
+    : s.lastBuilt ? `Last built: <strong>${s.lastBuilt}</strong>` : 'Idle — waiting for work';
+
+  const queue = s.queue.length
+    ? s.queue.map((f, i) => `<div class="agent-queue-item"><span class="agent-queue-num">${i + 1}</span>${f.title}<span class="agent-cat">${f.category}</span></div>`).join('')
+    : '<div style="color:var(--gray-400);font-size:13px">Queue empty</div>';
+
+  const recent = s.completed.length
+    ? s.completed.map(f => `<div class="agent-done-item">✓ ${f.title}</div>`).join('')
+    : '';
+
+  el.innerHTML = `
+    <div class="agent-status-row">${statusDot}<span>${statusText}</span></div>
+    ${s.swarm === 'running' ? '<div class="agent-swarm-active">Swarm active — spawning agents...</div>' : ''}
+    ${s.lastError ? `<div class="agent-error">Error: ${s.lastError}</div>` : ''}
+    <div class="agent-section-title">Queue (${s.queue.length})</div>
+    ${queue}
+    ${recent ? `<div class="agent-section-title" style="margin-top:10px">Recently built</div>${recent}` : ''}
+    ${s.updatedAt ? `<div class="agent-updated">Updated ${new Date(s.updatedAt).toLocaleTimeString()}</div>` : ''}
+  `;
+}
+
+// Refresh agent status every 15 seconds
+setInterval(() => {
+  const dashActive = document.getElementById('tab-dashboard')?.classList.contains('active');
+  if (dashActive) loadAgentStatus();
+}, 15000);

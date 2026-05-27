@@ -11,6 +11,7 @@ app.use('/api/habits', require('./routes/habits'));
 app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/streaks', require('./routes/streaks'));
 app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/agents', require('./routes/agents'));
 
 app.use('/api/{*path}', (req, res) => res.status(404).json({ error: 'Not found' }));
 app.use(errorHandler);
