@@ -12,7 +12,7 @@
     <h1>Ai Army</h1>
     <div style="display:flex;align-items:center;gap:10px;">
       <span class="date" id="today-date"></span>
-      <button id="theme-toggle" onclick="toggleTheme()" style="background:none;border:1px solid var(--gray-200);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:16px;" title="Toggle dark mode">🌙</button>
+      <button id="theme-toggle" onclick="toggleTheme()" style="background:none;border:1px solid var(--gray-200);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--gray-600);">Dark</button>
     </div>
   </header>
 
@@ -130,12 +130,12 @@
   function toggleTheme() {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-    document.getElementById('theme-toggle').textContent = isDark ? '🌙' : '☀️';
+    document.getElementById('theme-toggle').textContent = isDark ? 'Dark' : 'Light';
     localStorage.setItem('theme', isDark ? 'light' : 'dark');
   }
   const savedTheme = localStorage.getItem('theme') || 'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
-  document.getElementById('theme-toggle').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+  document.getElementById('theme-toggle').textContent = savedTheme === 'dark' ? 'Light' : 'Dark';
 
   // Initial load
   loadHabits();
