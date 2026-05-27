@@ -2,48 +2,95 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## Repository Structure
 
-Android inventory management app (Java, API 16–23) using SQLite for local persistence. Built with Android Gradle Plugin 2.3.0 and Gradle 3.3.
+This repo contains two apps:
 
-## Build & Test Commands
+- **Root (`/`)** — **Ai Army**: a personal life-automation web app (Node.js + Express + SQLite). This is the primary active project.
+- **`android/`** — **InventoryApp**: an Android inventory management app (Java, API 16–23), preserved for future use.
+
+---
+
+## Ai Army (root)
+
+### Build & Run
 
 ```bash
-# Assemble debug APK
+npm install
+npm start        # http://localhost:3000
+npm run dev      # with nodemon auto-reload
+```
+
+### Architecture
+
+**Backend** (`src/`): Express 5, `better-sqlite3` (synchronous SQLite), single-user local deployment.
+
+- `src/server.js` — entry point; mounts all routers and serves `public/`
+- `src/db.js` — opens the SQLite connection, applies `src/schema.sql` on startup
+- `src/schema.sql` — canonical DDL; all tables use `CREATE TABLE IF NOT EXISTS`
+- `src/routes/` — `habits.js`, `tasks.js`, `streaks.js`
+- `src/services/habitService.js` — streak algorithm (frequency-aware: daily / weekdays / weekly), mark-complete logic
+- `src/services/taskService.js` — bulk priority reorder
+- `src/services/ai.js` — **Phase 2 seam**: passthrough stub, replace with Anthropic SDK calls
+
+**Frontend** (`public/`): Vanilla HTML/CSS/JS, mobile-first, no framework.
+
+- Three tabs: Habits, Tasks, Dashboard (Dashboard is a stub for Phase 2)
+- `public/js/api.js` — thin `fetch()` wrapper used by all tab scripts
+
+**Database** (`data/army.db`, gitignored): Three tables — `habits`, `habit_completions`, `tasks`. The `tasks` table already has `estimated_minutes` and `ai_priority_score` columns (NULL in Phase 1) so Phase 2 needs no schema migration.
+
+### API Endpoints
+
+| Resource | Methods |
+|---|---|
+| `/api/habits` | GET, POST, PATCH `:id`, DELETE `:id` |
+| `/api/habits/:id/complete` | POST (mark), DELETE (unmark) |
+| `/api/tasks` | GET `?status=`, POST, PATCH `:id`, DELETE `:id` |
+| `/api/tasks/reorder` | POST `{ ordered_ids: [...] }` |
+| `/api/tasks/:id/complete` | POST |
+| `/api/streaks/summary` | GET |
+| `/api/streaks/:habitId/history` | GET `?days=30` |
+
+### Phase 2 Roadmap
+
+Claude AI integration goes in `src/services/ai.js` — the route, schema column, and calling code stay unchanged. Planned additions: task prioritization, auto-scheduler (uses `estimated_minutes`), goal decomposer, life dashboard.
+
+Add `ANTHROPIC_API_KEY` to a `.env` file (see `.env.example`).
+
+---
+
+## InventoryApp (`android/`)
+
+Android inventory management app (Java, API 16–23) using SQLite. Built with Android Gradle Plugin 2.3.0 and Gradle 3.3.
+
+### Build & Test
+
+```bash
+cd android
 ./gradlew assembleDebug
-
-# Run unit tests (JVM only — no instrumented tests exist)
 ./gradlew test
-
-# Run a single test class
 ./gradlew test --tests "com.rarick.inventoryapp.ExampleUnitTest"
-
-# Clean build outputs
 ./gradlew clean
 ```
 
-## Architecture
+### Architecture
 
-The app has a single module (`app`) with a flat Activity-based structure — no fragments, no ViewModel, no Repository layer.
+Flat Activity-based structure — no fragments, no ViewModel, no Repository layer.
 
-**Data flow:**
-1. `DBContract` defines the SQLite schema (table name, column constants, CREATE/DROP SQL) for the single `inventory` table.
-2. `DBHandler` (`SQLiteOpenHelper`) executes all CRUD operations and returns `ArrayList<Inventory>`.
-3. `Inventory` is a plain Java model (id, productName, quantity, price). It has a `quantitySale()` method that decrements quantity (floor 0).
-4. Activities interact with `DBHandler` directly — there is no intermediate service or repository.
+- `DBContract` → SQLite schema constants and CREATE/DROP SQL
+- `DBHandler` (`SQLiteOpenHelper`) → all CRUD, returns `ArrayList<Inventory>`
+- `Inventory` → plain model (id, productName, quantity, price); `quantitySale()` decrements quantity (floor 0)
+- Activities call `DBHandler` directly
 
-**Activity navigation:**
-- `MainActivity` → reads all inventory rows on `onCreate`, populates a `ListView` via `ListViewAdapter`.
-- `ListViewAdapter` (extends `BaseAdapter`) handles the "sale" button (decrements quantity inline) and row clicks (launches `ItemFullDisplayActivity` via Intent extras).
-- `AddNewItem` → form for inserting a new item; also handles image selection from the gallery and saves the bitmap to internal storage using the row's sequential ID as the filename.
-- `ItemFullDisplayActivity` → displays a single item; loads its image from internal storage by path `filesDir/<rowID - 1>`; supports delete (with confirmation dialog) and "order more" (fires a `mailto:` Intent).
+Activity flow: `MainActivity` (ListView via `ListViewAdapter`) → `ItemFullDisplayActivity` (detail, delete, order-more email) / `AddNewItem` (insert + gallery image pick).
 
-**Image storage convention:** Images are saved to `context.getFilesDir()/<nextID>` at add-time, where `nextID = rowCount() + 1`. They are read back as `filesDir/<id - 1>`. This off-by-one must be preserved when modifying item creation or image loading logic.
+**Image storage:** saved to `filesDir/<rowCount+1>` at add-time, read back as `filesDir/<id-1>`. This off-by-one must be preserved.
 
-## Known Issues / Gotchas
+### Known Gotchas
 
-- **Package name inconsistency:** The manifest declares `package="com.Rarick.inventoryapp"` (capital R) but `build.gradle` sets `applicationId "com.samsrutidash.inventoryapp"`. The unit test lives under `com.rarick.inventoryapp` (all lowercase). Keep these as-is unless explicitly reconciling them.
-- **`image` column exists in `DBContract` but is never written** — `addItem` and `updateHabitRow` omit `KEY_IMAGE`. The column is present in the schema solely for future use.
-- **`DATABASE_VERSION` is 1** — any schema change requires a version bump and a proper `onUpgrade` migration (currently `onUpgrade` drops and recreates the table, losing all data).
-- **`ListViewAdapter` calls `notifyDataSetChanged()` inside `getView()`** — this is a legacy pattern that causes redundant redraws; avoid worsening it.
-- **`ItemFullDisplayActivity.onSubmitMore`** hardcodes a recipient email address (`workOrderMore@gmail.com`) and a sender name (`Samsruti`) — these are placeholders from the original author.
+- Manifest `package="com.Rarick.inventoryapp"` (capital R) vs `applicationId "com.samsrutidash.inventoryapp"` vs test package `com.rarick.inventoryapp` — keep as-is.
+- `KEY_IMAGE` column exists in schema but is never written by `addItem` or `updateHabitRow`.
+- `DATABASE_VERSION = 1` — any schema change needs a version bump; current `onUpgrade` drops and recreates (data loss).
+- `ListViewAdapter` calls `notifyDataSetChanged()` inside `getView()` — legacy pattern, don't worsen it.
+- `ItemFullDisplayActivity.onSubmitMore` hardcodes `workOrderMore@gmail.com` and sender name `Samsruti`.
