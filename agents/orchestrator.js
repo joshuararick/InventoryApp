@@ -22,9 +22,11 @@ if (!process.env.ANTHROPIC_API_KEY) {
 
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 const { buildFeature } = require('./builder');
 const { generateIdeas } = require('./ideator');
 
+const ROOT = path.resolve(__dirname, '..');
 const BACKLOG_PATH = path.resolve(__dirname, 'backlog.json');
 const INTERVAL_MS = (Number(process.env.INTERVAL_MINUTES) || 30) * 60 * 1000;
 const runOnce = process.argv.includes('--once');
@@ -65,6 +67,34 @@ function markFailed(backlog, feature, reason) {
   feature.failReason = reason;
   feature.failedAt = new Date().toISOString();
   saveBacklog(backlog);
+}
+
+// ── Git commit + push ─────────────────────────────────────────────────────────
+
+function commitAndPush(feature, log) {
+  try {
+    const run = (cmd) => execSync(cmd, { cwd: ROOT, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+
+    // Stage app files and updated backlog only — never node_modules, .env, data/
+    run('git add src/ public/ agents/backlog.json');
+
+    const status = run('git status --porcelain');
+    if (!status.trim()) {
+      log('[git] Nothing to commit (builder made no file changes)');
+      return;
+    }
+
+    const branch = run('git branch --show-current').trim();
+    const msg = `feat: ${feature.title}\n\nAutonomously built by Ai Army builder agent.\nFeature id: ${feature.id}`;
+    run(`git commit -m ${JSON.stringify(msg)}`);
+    log('[git] Committed');
+
+    run(`git push -u origin ${branch}`);
+    log(`[git] Pushed to origin/${branch}`);
+  } catch (err) {
+    // Git errors are non-fatal — the build still succeeded
+    log(`[git] Warning: ${err.stderr?.trim() || err.message}`);
+  }
 }
 
 // ── Idea injection ────────────────────────────────────────────────────────────
@@ -126,6 +156,7 @@ async function runCycle() {
     const tokens = await buildFeature(feature, log);
     markDone(loadBacklog(), feature, tokens);
     log(`[orchestrator] ✓ Completed: ${feature.title}`);
+    commitAndPush(feature, log);
   } catch (err) {
     log(`[orchestrator] ✗ Failed: ${err.message}`);
     markFailed(loadBacklog(), feature, err.message);
