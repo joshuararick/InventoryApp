@@ -52,12 +52,35 @@
     <div id="task-list"></div>
   </div>
 
-  <!-- ── Dashboard Tab (Phase 2) ── -->
+  <!-- ── Dashboard Tab ── -->
   <div class="tab-content" id="tab-dashboard">
-    <div class="coming-soon">
-      <div class="big">🚀</div>
-      <h3>Dashboard coming soon</h3>
-      <p>Phase 2: habits, tasks, goals, and AI insights in one view.</p>
+    <div class="section-header">
+      <h2>Dashboard</h2>
+      <span class="date" id="dash-date"></span>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="dash-stats" id="dash-stats"></div>
+
+    <!-- Best streak -->
+    <div class="dash-block" id="dash-best-streak"></div>
+
+    <!-- Habits at a glance -->
+    <div class="dash-block">
+      <div class="dash-block-title">Habits today</div>
+      <div id="dash-habits"></div>
+    </div>
+
+    <!-- Due today -->
+    <div class="dash-block" id="dash-due-today-block">
+      <div class="dash-block-title">Due today</div>
+      <div id="dash-due-today"></div>
+    </div>
+
+    <!-- Due soon -->
+    <div class="dash-block" id="dash-due-soon-block">
+      <div class="dash-block-title">Coming up (next 3 days)</div>
+      <div id="dash-due-soon"></div>
     </div>
   </div>
 
@@ -87,6 +110,7 @@
 <script src="/js/api.js"></script>
 <script src="/js/habits.js"></script>
 <script src="/js/tasks.js"></script>
+<script src="/js/dashboard.js"></script>
 <script>
   // Set today's date in header
   document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-US', {
@@ -103,6 +127,7 @@
   // Initial load
   loadHabits();
   loadTasks();
+  loadDashboard();
 </script>
 </body>
 </html>
