@@ -3,9 +3,13 @@ const path = require('path');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
+const PUBLIC = path.join(__dirname, '..', 'public');
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(express.static(PUBLIC));
+
+app.get('/', (req, res) => res.sendFile(path.join(PUBLIC, 'landing.html')));
+app.get('/app', (req, res) => res.sendFile(path.join(PUBLIC, 'index.html')));
 
 app.use('/api/habits', require('./routes/habits'));
 app.use('/api/tasks', require('./routes/tasks'));

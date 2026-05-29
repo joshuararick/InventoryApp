@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ai Army</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand: #6366f1;
+      --brand2: #a855f7;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warn: #f59e0b;
+      --bg: #030712;
+      --surface: #0f172a;
+      --surface2: #1e293b;
+      --border: #1e293b;
+      --text: #f1f5f9;
+      --muted: #64748b;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Nav ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 40px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: rgba(3,7,18,.85);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+    }
+    .nav-logo { font-size: 20px; font-weight: 800; background: linear-gradient(135deg, var(--brand), var(--brand2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .nav-links { display: flex; gap: 12px; }
+    .btn { padding: 9px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-ghost { background: none; color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+    .btn-primary { background: linear-gradient(135deg, var(--brand), var(--brand2)); color: #fff; }
+    .btn-primary:hover { opacity: .9; }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      padding: 80px 40px 60px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -100px; left: 50%;
+      transform: translateX(-50%);
+      width: 600px; height: 400px;
+      background: radial-gradient(ellipse, rgba(99,102,241,.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--brand); font-weight: 600; margin-bottom: 24px; }
+    .hero-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); animation: pulse 1.5s infinite; }
+    .hero h1 { font-size: clamp(36px, 6vw, 64px); font-weight: 900; line-height: 1.1; margin-bottom: 20px; }
+    .hero h1 span { background: linear-gradient(135deg, var(--brand), var(--brand2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { font-size: 18px; color: var(--muted); max-width: 500px; margin: 0 auto 36px; line-height: 1.6; }
+    .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── Stats bar ── */
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      padding: 28px 40px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-wrap: wrap;
+    }
+    .stat-item { text-align: center; }
+    .stat-num { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, var(--brand), var(--brand2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: .05em; }
+
+    /* ── Main grid ── */
+    .main { max-width: 1100px; margin: 0 auto; padding: 48px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 720px) { .main { grid-template-columns: 1fr; } }
+
+    /* ── Cards ── */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+    .card-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+    .card-full { grid-column: 1 / -1; }
+
+    /* ── Agent cards ── */
+    .agents-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    .agent-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; transition: border-color .2s; }
+    .agent-card.active { border-color: var(--brand); box-shadow: 0 0 20px rgba(99,102,241,.15); }
+    .agent-icon { font-size: 28px; margin-bottom: 8px; }
+    .agent-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .agent-status { font-size: 11px; color: var(--muted); }
+    .agent-status.working { color: var(--brand); }
+    .agent-dot2 { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
+    .agent-dot2.on { background: var(--success); animation: pulse 1.2s infinite; }
+    .agent-dot2.off { background: var(--muted); }
+
+    /* ── Queue ── */
+    .queue-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .queue-item:last-child { border-bottom: none; }
+    .queue-num { width: 24px; height: 24px; border-radius: 6px; background: var(--surface2); font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; color: var(--muted); flex-shrink: 0; }
+    .queue-title { flex: 1; font-size: 14px; }
+    .queue-cat { font-size: 11px; color: var(--muted); background: var(--surface2); padding: 2px 8px; border-radius: 4px; }
+    .queue-building { color: var(--brand); font-size: 11px; font-weight: 700; animation: pulse 1s infinite; }
+
+    /* ── Activity feed ── */
+    .feed { max-height: 320px; overflow-y: auto; }
+    .feed-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); animation: fadeIn .3s ease; }
+    .feed-item:last-child { border-bottom: none; }
+    @keyframes fadeIn { from { opacity:0; transform: translateY(-4px); } to { opacity:1; transform: none; } }
+    .feed-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .feed-body { flex: 1; }
+    .feed-text { font-size: 13px; line-height: 1.4; }
+    .feed-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Done list ── */
+    .done-item { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+    .done-item:last-child { border-bottom: none; }
+    .done-check { width: 20px; height: 20px; border-radius: 50%; background: var(--success); display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+    .done-title { font-size: 14px; flex: 1; }
+    .done-time { font-size: 11px; color: var(--muted); }
+
+    /* ── Empty ── */
+    .empty-state { text-align: center; padding: 32px; color: var(--muted); font-size: 14px; }
+
+    /* ── Building banner ── */
+    .building-banner { background: linear-gradient(135deg, rgba(99,102,241,.15), rgba(168,85,247,.15)); border: 1px solid rgba(99,102,241,.3); border-radius: 10px; padding: 16px 20px; margin-bottom: 18px; display: none; }
+    .building-banner.show { display: flex; align-items: center; gap: 12px; }
+    .building-spinner { width: 20px; height: 20px; border: 2px solid rgba(99,102,241,.3); border-top-color: var(--brand); border-radius: 50%; animation: spin 1s linear infinite; flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .building-text { font-size: 14px; }
+    .building-text strong { color: var(--brand); }
+
+    /* ── Footer ── */
+    footer { text-align: center; padding: 32px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Ai Army</div>
+  <div class="nav-links">
+    <a href="/app" class="btn btn-ghost">Open App</a>
+    <a href="/app" class="btn btn-primary">Launch</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge"><span class="hero-badge-dot"></span> Agents online</div>
+  <h1>Your app that<br><span>builds itself</span></h1>
+  <p>AI agents work around the clock — inventing features, writing code, and shipping updates while you sleep.</p>
+  <div class="hero-actions">
+    <a href="/app" class="btn btn-primary">Open App</a>
+    <a href="#agents" class="btn btn-ghost">Watch agents work</a>
+  </div>
+</section>
+
+<div class="stats-bar" id="stats-bar">
+  <div class="stat-item"><div class="stat-num" id="stat-built">—</div><div class="stat-label">Features built</div></div>
+  <div class="stat-item"><div class="stat-num" id="stat-queue">—</div><div class="stat-label">In queue</div></div>
+  <div class="stat-item"><div class="stat-num" id="stat-agents">5</div><div class="stat-label">Active agents</div></div>
+  <div class="stat-item"><div class="stat-num" id="stat-status">—</div><div class="stat-label">Status</div></div>
+</div>
+
+<div class="main" id="agents">
+
+  <!-- Agent roster -->
+  <div class="card card-full">
+    <div class="card-title">Agent Roster</div>
+    <div class="building-banner" id="building-banner">
+      <div class="building-spinner"></div>
+      <div class="building-text">Building: <strong id="building-name"></strong></div>
+    </div>
+    <div class="agents-grid" id="agents-grid">
+      <div class="agent-card" data-agent="orchestrator"><div class="agent-icon">🎯</div><div class="agent-name">Orchestrator</div><div class="agent-status">Coordinating</div></div>
+      <div class="agent-card" data-agent="ui"><div class="agent-icon">🎨</div><div class="agent-name">UI Agent</div><div class="agent-status">Standby</div></div>
+      <div class="agent-card" data-agent="backend"><div class="agent-icon">⚙️</div><div class="agent-name">Backend Agent</div><div class="agent-status">Standby</div></div>
+      <div class="agent-card" data-agent="habits"><div class="agent-icon">🔥</div><div class="agent-name">Habits Agent</div><div class="agent-status">Standby</div></div>
+      <div class="agent-card" data-agent="tasks"><div class="agent-icon">✅</div><div class="agent-name">Tasks Agent</div><div class="agent-status">Standby</div></div>
+      <div class="agent-card" data-agent="dashboard"><div class="agent-icon">📊</div><div class="agent-name">Dashboard Agent</div><div class="agent-status">Standby</div></div>
+    </div>
+  </div>
+
+  <!-- Build queue -->
+  <div class="card">
+    <div class="card-title">Build Queue</div>
+    <div id="queue-list"><div class="empty-state">Loading queue...</div></div>
+  </div>
+
+  <!-- Activity feed -->
+  <div class="card">
+    <div class="card-title">Live Activity</div>
+    <div class="feed" id="activity-feed"><div class="empty-state">Waiting for activity...</div></div>
+  </div>
+
+  <!-- Completed features -->
+  <div class="card card-full">
+    <div class="card-title">Shipped Features</div>
+    <div id="done-list"><div class="empty-state">No features shipped yet — start the agent to begin.</div></div>
+  </div>
+
+</div>
+
+<footer>Ai Army &mdash; self-building personal automation &mdash; <a href="/app" style="color:var(--brand)">Open App</a></footer>
+
+<script>
+  const feed = [];
+
+  function timeAgo(iso) {
+    if (!iso) return '';
+    const secs = Math.round((Date.now() - new Date(iso)) / 1000);
+    if (secs < 60) return `${secs}s ago`;
+    if (secs < 3600) return `${Math.round(secs/60)}m ago`;
+    return `${Math.round(secs/3600)}h ago`;
+  }
+
+  function addFeedItem(icon, text) {
+    feed.unshift({ icon, text, time: new Date().toISOString() });
+    if (feed.length > 30) feed.pop();
+    renderFeed();
+  }
+
+  function renderFeed() {
+    const el = document.getElementById('activity-feed');
+    if (!feed.length) { el.innerHTML = '<div class="empty-state">Waiting for activity...</div>'; return; }
+    el.innerHTML = feed.map(f => `
+      <div class="feed-item">
+        <div class="feed-icon">${f.icon}</div>
+        <div class="feed-body">
+          <div class="feed-text">${f.text}</div>
+          <div class="feed-time">${timeAgo(f.time)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  let lastBuilding = null;
+  let lastBuilt = null;
+  let lastSwarm = null;
+
+  async function refresh() {
+    let s;
+    try { const r = await fetch('/api/agents/status'); s = await r.json(); } catch { return; }
+
+    // Stats
+    document.getElementById('stat-built').textContent = s.completed.length || '0';
+    document.getElementById('stat-queue').textContent = s.queue.length || '0';
+    document.getElementById('stat-status').textContent = s.building ? 'Building' : 'Idle';
+
+    // Building banner
+    const banner = document.getElementById('building-banner');
+    if (s.building) {
+      banner.classList.add('show');
+      document.getElementById('building-name').textContent = s.building;
+      if (s.building !== lastBuilding) {
+        addFeedItem('🔨', `Started building: <strong>${s.building}</strong>`);
+        lastBuilding = s.building;
+        // Activate orchestrator card
+        document.querySelectorAll('.agent-card').forEach(c => { c.classList.remove('active'); c.querySelector('.agent-status').className = 'agent-status'; c.querySelector('.agent-status').textContent = 'Standby'; });
+        const oc = document.querySelector('[data-agent="orchestrator"]');
+        if (oc) { oc.classList.add('active'); oc.querySelector('.agent-status').className = 'agent-status working'; oc.querySelector('.agent-status').textContent = 'Building...'; }
+      }
+    } else {
+      banner.classList.remove('show');
+      if (lastBuilding) {
+        lastBuilding = null;
+        document.querySelectorAll('.agent-card').forEach(c => { c.classList.remove('active'); c.querySelector('.agent-status').className = 'agent-status'; c.querySelector('.agent-status').textContent = 'Standby'; });
+        const oc = document.querySelector('[data-agent="orchestrator"]');
+        if (oc) { oc.querySelector('.agent-status').textContent = 'Idle'; }
+      }
+    }
+
+    // New build completed
+    if (s.lastBuilt && s.lastBuilt !== lastBuilt) {
+      addFeedItem('✅', `Shipped: <strong>${s.lastBuilt}</strong>`);
+      lastBuilt = s.lastBuilt;
+    }
+
+    // Swarm active
+    if (s.swarm === 'running' && lastSwarm !== 'running') {
+      addFeedItem('🤖', 'Agent swarm spawned — generating new feature ideas...');
+      ['ui','backend','habits','tasks','dashboard'].forEach(a => {
+        const c = document.querySelector(`[data-agent="${a}"]`);
+        if (c) { c.classList.add('active'); c.querySelector('.agent-status').className = 'agent-status working'; c.querySelector('.agent-status').textContent = 'Thinking...'; }
+      });
+    }
+    if (s.swarm === 'idle' && lastSwarm === 'running') {
+      const ideas = s.lastSwarmIdeas || [];
+      if (ideas.length) addFeedItem('💡', `Swarm proposed ${ideas.length} new features`);
+      ['ui','backend','habits','tasks','dashboard'].forEach(a => {
+        const c = document.querySelector(`[data-agent="${a}"]`);
+        if (c) { c.classList.remove('active'); c.querySelector('.agent-status').className = 'agent-status'; c.querySelector('.agent-status').textContent = 'Standby'; }
+      });
+    }
+    lastSwarm = s.swarm;
+
+    // Queue
+    const qEl = document.getElementById('queue-list');
+    if (!s.queue.length) { qEl.innerHTML = '<div class="empty-state">Queue empty — agent will generate new ideas</div>'; }
+    else {
+      qEl.innerHTML = s.queue.map((f, i) => `
+        <div class="queue-item">
+          <div class="queue-num">${i+1}</div>
+          <div class="queue-title">${f.title}</div>
+          <div class="queue-cat">${f.category}</div>
+          ${i === 0 && s.building ? '<div class="queue-building">BUILDING</div>' : ''}
+        </div>
+      `).join('');
+    }
+
+    // Done
+    const dEl = document.getElementById('done-list');
+    if (!s.completed.length) { dEl.innerHTML = '<div class="empty-state">No features shipped yet — run <code>npm run agent</code> to start</div>'; }
+    else {
+      dEl.innerHTML = s.completed.map(f => `
+        <div class="done-item">
+          <div class="done-check">✓</div>
+          <div class="done-title">${f.title}</div>
+          <div class="done-time">${f.completedAt ? timeAgo(f.completedAt) : ''}</div>
+        </div>
+      `).join('');
+    }
+  }
+
+  refresh();
+  setInterval(refresh, 5000);
+</script>
+</body>
+</html>
