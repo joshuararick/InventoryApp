@@ -159,12 +159,13 @@ Start by listing the relevant files, then read them, then make your changes.`;
   let totalInputTokens = 0;
   let totalOutputTokens = 0;
 
-  for (let round = 0; round < 25; round++) {
+  const MODEL = process.env.BUILDER_MODEL || 'claude-sonnet-4-6';
+
+  for (let round = 0; round < 20; round++) {
     const response = await client.messages.create({
-      model: 'claude-opus-4-7',
-      max_tokens: 8192,
-      thinking: { type: 'adaptive' },
-      system: systemPrompt,
+      model: MODEL,
+      max_tokens: 4096,
+      system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
       tools: allTools,
       messages,
     });

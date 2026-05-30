@@ -30,7 +30,7 @@ const { runAgentSwarm } = require('./swarm');
 const ROOT = path.resolve(__dirname, '..');
 const BACKLOG_PATH = path.resolve(__dirname, 'backlog.json');
 const STATUS_PATH = path.resolve(__dirname, 'status.json');
-const INTERVAL_MS = (Number(process.env.INTERVAL_MINUTES) || 10) * 60 * 1000;
+const INTERVAL_MS = (Number(process.env.INTERVAL_MINUTES) || 30) * 60 * 1000;
 const runOnce = process.argv.includes('--once');
 
 // ── Backlog I/O ───────────────────────────────────────────────────────────────
