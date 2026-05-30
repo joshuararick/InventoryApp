@@ -6,6 +6,7 @@ const path = require('path');
 
 const STATUS_PATH = path.resolve(__dirname, '../../agents/status.json');
 const BACKLOG_PATH = path.resolve(__dirname, '../../agents/backlog.json');
+const mcpConfig = require('../../agents/mcps/config.json');
 
 router.get('/status', (req, res) => {
   let status = {};
@@ -30,6 +31,10 @@ router.get('/status', (req, res) => {
       .slice(-5)
       .reverse()
       .map(f => ({ title: f.title, completedAt: f.completedAt })),
+    mcpMap: mcpConfig.agentCapabilities,
+    mcpServers: Object.fromEntries(
+      Object.entries(mcpConfig.servers).map(([k, v]) => [k, { description: v.description, agents: v.agents }])
+    ),
   });
 });
 

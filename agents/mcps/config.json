@@ -1,0 +1,48 @@
+{
+  "servers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}" },
+      "description": "Read/write GitHub repos, issues, PRs, commits",
+      "agents": ["orchestrator", "backend"]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
+      "env": {},
+      "description": "Deep file system access across the whole project",
+      "agents": ["ui", "backend", "habits", "tasks", "dashboard"]
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": { "BRAVE_API_KEY": "${BRAVE_API_KEY}" },
+      "description": "Web search for docs, APIs, design inspiration",
+      "agents": ["ui", "ideator"]
+    },
+    "google-calendar": {
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/mcp-server-google-calendar"],
+      "env": {},
+      "description": "Read calendar events to inform habit/task scheduling",
+      "agents": ["habits", "tasks", "dashboard"]
+    },
+    "gmail": {
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/mcp-server-gmail"],
+      "env": {},
+      "description": "Parse emails to auto-create tasks",
+      "agents": ["tasks", "orchestrator"]
+    }
+  },
+  "agentCapabilities": {
+    "orchestrator": ["github", "gmail"],
+    "ui":           ["filesystem", "brave-search"],
+    "backend":      ["github", "filesystem"],
+    "habits":       ["filesystem", "google-calendar"],
+    "tasks":        ["filesystem", "google-calendar", "gmail"],
+    "dashboard":    ["filesystem", "google-calendar"],
+    "ideator":      ["brave-search"]
+  }
+}

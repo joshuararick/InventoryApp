@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const Anthropic = require('@anthropic-ai/sdk');
+const { getToolsForAgent, callMcpTool } = require('./mcps/client');
 
 const ROOT = path.resolve(__dirname, '..');
 const client = new Anthropic();
@@ -111,6 +112,13 @@ function executeTool(name, input) {
 async function buildFeature(feature, log) {
   log(`\n[builder] Starting: ${feature.title}`);
 
+  // Load MCP tools for this agent type
+  const mcpTools = await getToolsForAgent(feature.category || 'ui', log).catch(() => []);
+  const allTools = [...tools, ...mcpTools.map(t => ({ name: t.name, description: t.description, input_schema: t.input_schema }))];
+  if (mcpTools.length) log(`[builder] MCP tools loaded: ${mcpTools.map(t => t.name).join(', ')}`);
+
+  const mcpToolMap = Object.fromEntries(mcpTools.map(t => [t.name, t]));
+
   const systemPrompt = `You are an expert Node.js and vanilla-JS developer working on "Ai Army" — a personal life-automation web app.
 
 Project stack: Express 5, better-sqlite3, vanilla HTML/CSS/JS (no frameworks).
@@ -125,6 +133,9 @@ Key paths:
   public/css/app.css   — mobile-first CSS (max-width 480px)
   public/js/           — api.js, habits.js, tasks.js
 
+You also have access to MCP tools for external integrations (GitHub, Calendar, Gmail, web search).
+Use them when they help you build better features.
+
 Rules:
 - Read every file you need to understand before editing.
 - Write complete file contents when you write_file (no partial diffs).
@@ -134,7 +145,7 @@ Rules:
 - Do not create new npm dependencies — use only what is already installed.
 - Only write files in src/, public/, or the project root. Never touch agents/ or android/.
 - After writing, verify your changes make sense by reading the file back.
-- When done, call done tool or stop — do NOT say "I'm done" in prose, just stop tool calls.`;
+- When done, stop tool calls.`;
 
   const userMsg = `Implement this feature in the Ai Army project:
 
@@ -154,7 +165,7 @@ Start by listing the relevant files, then read them, then make your changes.`;
       max_tokens: 8192,
       thinking: { type: 'adaptive' },
       system: systemPrompt,
-      tools,
+      tools: allTools,
       messages,
     });
 
@@ -183,9 +194,14 @@ Start by listing the relevant files, then read them, then make your changes.`;
     const toolResults = [];
     for (const tu of toolUses) {
       log(`[builder] → ${tu.name}(${JSON.stringify(tu.input).substring(0, 80)})`);
-      const result = executeTool(tu.name, tu.input);
+      let result;
+      if (mcpToolMap[tu.name]) {
+        result = await callMcpTool(mcpToolMap[tu.name], tu.input, log);
+      } else {
+        result = executeTool(tu.name, tu.input);
+      }
       const snippet = String(result).substring(0, 100);
-      log(`[builder]   ← ${snippet}${result.length > 100 ? '…' : ''}`);
+      log(`[builder]   ← ${snippet}${String(result).length > 100 ? '…' : ''}`);
       toolResults.push({ type: 'tool_result', tool_use_id: tu.id, content: String(result) });
     }
 

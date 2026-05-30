@@ -208,6 +208,12 @@
     <div class="feed" id="activity-feed"><div class="empty-state">Waiting for activity...</div></div>
   </div>
 
+  <!-- MCP connections -->
+  <div class="card card-full">
+    <div class="card-title">MCP Integrations</div>
+    <div id="mcp-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;"></div>
+  </div>
+
   <!-- Completed features -->
   <div class="card card-full">
     <div class="card-title">Shipped Features</div>
@@ -319,6 +325,20 @@
           <div class="queue-title">${f.title}</div>
           <div class="queue-cat">${f.category}</div>
           ${i === 0 && s.building ? '<div class="queue-building">BUILDING</div>' : ''}
+        </div>
+      `).join('');
+    }
+
+    // MCP grid
+    if (s.mcpServers) {
+      const mcpEl = document.getElementById('mcp-grid');
+      const icons = { github: '🐙', filesystem: '📁', 'brave-search': '🔍', 'google-calendar': '📅', gmail: '📧' };
+      mcpEl.innerHTML = Object.entries(s.mcpServers).map(([name, srv]) => `
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;">
+          <div style="font-size:22px;margin-bottom:6px">${icons[name] || '🔌'}</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">${name}</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${srv.description}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">${srv.agents.map(a => `<span style="font-size:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--muted)">${a}</span>`).join('')}</div>
         </div>
       `).join('');
     }
