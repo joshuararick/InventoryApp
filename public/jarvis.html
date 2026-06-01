@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JARVIS</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #03070f;
+  --surface: #0d1117;
+  --surface2: #161b22;
+  --border: #21262d;
+  --brand: #6366f1;
+  --brand2: #818cf8;
+  --success: #22c55e;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --text: #e6edf3;
+  --muted: #7d8590;
+}
+html, body { height: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  background: linear-gradient(135deg, var(--brand), var(--brand2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  animation: pulse 2s infinite;
+  flex-shrink: 0;
+  -webkit-text-fill-color: initial;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+.header-links { display: flex; gap: 8px; }
+.link-btn {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color .15s, border-color .15s;
+}
+.link-btn:hover { color: var(--text); border-color: var(--muted); }
+
+/* ── Chat area ── */
+#chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-behavior: smooth;
+}
+#chat::-webkit-scrollbar { width: 4px; }
+#chat::-webkit-scrollbar-track { background: transparent; }
+#chat::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── Messages ── */
+.msg { display: flex; gap: 10px; max-width: 720px; }
+.msg.user { flex-direction: row-reverse; margin-left: auto; }
+.avatar {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.msg.jarvis .avatar { background: linear-gradient(135deg, var(--brand), var(--brand2)); }
+.msg.user .avatar { background: var(--surface2); border: 1px solid var(--border); }
+.msg-body { display: flex; flex-direction: column; gap: 6px; max-width: calc(100% - 42px); }
+.bubble {
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+.msg.jarvis .bubble {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top-left-radius: 3px;
+}
+.msg.user .bubble {
+  background: var(--brand);
+  color: #fff;
+  border-top-right-radius: 3px;
+}
+
+/* ── Tool call cards ── */
+.tool-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--brand);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.tool-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.tool-info { flex: 1; min-width: 0; }
+.tool-name { color: var(--brand2); font-weight: 600; font-family: monospace; }
+.tool-detail { margin-top: 2px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tool-result { margin-top: 4px; color: var(--success); font-size: 11px; }
+
+/* ── Thinking ── */
+.thinking-bubble {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top-left-radius: 3px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.thinking-bubble span {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+  animation: bounce .8s infinite alternate;
+}
+.thinking-bubble span:nth-child(2) { animation-delay: .15s; }
+.thinking-bubble span:nth-child(3) { animation-delay: .3s; }
+@keyframes bounce { from{transform:translateY(2px)} to{transform:translateY(-4px)} }
+
+/* ── Welcome ── */
+.welcome {
+  margin: auto;
+  text-align: center;
+  padding: 40px 20px;
+}
+.welcome h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; background: linear-gradient(135deg, var(--brand), var(--brand2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.welcome p { color: var(--muted); font-size: 15px; margin-bottom: 24px; line-height: 1.6; }
+.suggestions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.suggestion {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.suggestion:hover { border-color: var(--brand); color: var(--text); }
+
+/* ── Input ── */
+.input-area {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+#msg-input {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  height: 42px;
+  max-height: 120px;
+  outline: none;
+  transition: border-color .15s;
+}
+#msg-input:focus { border-color: var(--brand); }
+#msg-input::placeholder { color: var(--muted); }
+#send-btn {
+  width: 42px; height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--brand), var(--brand2));
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: opacity .15s;
+}
+#send-btn:disabled { opacity: .4; cursor: default; }
+.input-hint { font-size: 11px; color: var(--muted); margin-top: 6px; text-align: right; padding-right: 52px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="status-dot"></div>
+    JARVIS
+  </div>
+  <div class="header-links">
+    <a href="/app" class="link-btn">App</a>
+    <a href="/status" class="link-btn">Agents</a>
+  </div>
+</header>
+
+<div id="chat">
+  <div class="welcome" id="welcome">
+    <h2>Hello, I'm JARVIS</h2>
+    <p>Your personal AI. I can manage your habits, tasks,<br>and remember things that matter to you.</p>
+    <div class="suggestions">
+      <div class="suggestion" onclick="send('Give me a summary of today')">Give me a summary of today</div>
+      <div class="suggestion" onclick="send('Add morning run as a daily habit')">Add morning run as a daily habit</div>
+      <div class="suggestion" onclick="send('What tasks do I have?')">What tasks do I have?</div>
+      <div class="suggestion" onclick="send('Add a task: review monthly budget')">Add a task: review monthly budget</div>
+      <div class="suggestion" onclick="send('My name is Josh and my main goal is building Ai Army')">Introduce myself</div>
+    </div>
+  </div>
+</div>
+
+<div class="input-area">
+  <textarea id="msg-input" placeholder="Message JARVIS..." rows="1"></textarea>
+  <button id="send-btn" onclick="send()" title="Send (Enter)">&#8593;</button>
+</div>
+<div class="input-hint">Enter to send &nbsp;·&nbsp; Shift+Enter for new line</div>
+
+<script>
+const chat = document.getElementById('chat');
+const input = document.getElementById('msg-input');
+const sendBtn = document.getElementById('send-btn');
+
+const TOOL_ICONS = {
+  add_habit: '🔥', list_habits: '📋', complete_habit: '✅',
+  add_task: '📝', list_tasks: '📋', complete_task: '✅',
+  get_summary: '📊', remember: '🧠'
+};
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function toolDetail(name, input) {
+  if (name === 'add_habit') return `"${input.name}" · ${input.frequency}`;
+  if (name === 'complete_habit') return `habit #${input.habit_id}`;
+  if (name === 'add_task') return `"${input.title}"${input.due_date ? ' · due '+input.due_date : ''}`;
+  if (name === 'complete_task') return `task #${input.task_id}`;
+  if (name === 'remember') return `${input.key}: "${input.value}"`;
+  return '';
+}
+
+function toolResult(name, result) {
+  if (result.error) return `Error: ${result.error}`;
+  if (name === 'list_habits') return `${result.length} habit${result.length!==1?'s':''} found`;
+  if (name === 'list_tasks') return `${result.length} task${result.length!==1?'s':''} found`;
+  if (name === 'get_summary') {
+    const done = result.habits?.filter(h=>h.done).length || 0;
+    return `${done}/${result.habits?.length||0} habits done · ${result.tasks?.length||0} tasks pending`;
+  }
+  if (result.success) return 'Done';
+  if (result.remembered) return 'Saved to memory';
+  if (result.id) return `Created #${result.id}`;
+  return '';
+}
+
+function appendUserMsg(text) {
+  document.getElementById('welcome')?.remove();
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.innerHTML = `
+    <div class="avatar">👤</div>
+    <div class="msg-body"><div class="bubble">${escHtml(text)}</div></div>`;
+  chat.appendChild(div);
+  scrollBottom();
+}
+
+function appendThinking() {
+  document.getElementById('welcome')?.remove();
+  const div = document.createElement('div');
+  div.className = 'msg jarvis';
+  div.id = 'thinking';
+  div.innerHTML = `
+    <div class="avatar">J</div>
+    <div class="msg-body">
+      <div class="thinking-bubble"><span></span><span></span><span></span></div>
+    </div>`;
+  chat.appendChild(div);
+  scrollBottom();
+  return div;
+}
+
+function replaceThinking(reply, toolCalls) {
+  const thinking = document.getElementById('thinking');
+  if (!thinking) return;
+
+  let toolHtml = '';
+  for (const tc of (toolCalls || [])) {
+    const detail = toolDetail(tc.tool, tc.input);
+    const res = toolResult(tc.tool, tc.result);
+    toolHtml += `
+      <div class="tool-card">
+        <div class="tool-icon">${TOOL_ICONS[tc.tool] || '🔧'}</div>
+        <div class="tool-info">
+          <div class="tool-name">${tc.tool}</div>
+          ${detail ? `<div class="tool-detail">${escHtml(detail)}</div>` : ''}
+          ${res ? `<div class="tool-result">→ ${escHtml(res)}</div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  thinking.querySelector('.msg-body').innerHTML = `
+    ${toolHtml}
+    ${reply ? `<div class="bubble">${escHtml(reply)}</div>` : ''}`;
+  thinking.removeAttribute('id');
+  scrollBottom();
+}
+
+function scrollBottom() {
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function send(preset) {
+  const text = preset || input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  autoResize();
+  input.disabled = true;
+  sendBtn.disabled = true;
+
+  appendUserMsg(text);
+  const thinking = appendThinking();
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    replaceThinking(data.reply, data.toolCalls);
+  } catch (e) {
+    thinking.querySelector('.msg-body').innerHTML =
+      `<div class="bubble" style="color:var(--danger)">${escHtml(e.message)}</div>`;
+    thinking.removeAttribute('id');
+  }
+
+  input.disabled = false;
+  sendBtn.disabled = false;
+  input.focus();
+}
+
+function autoResize() {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+}
+
+input.addEventListener('input', autoResize);
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+});
+input.focus();
+</script>
+</body>
+</html>
