@@ -3,59 +3,67 @@
   "features": [
     {
       "id": "f001",
-      "title": "Dark mode toggle",
-      "description": "Add a dark/light mode toggle button in the header. Store preference in localStorage. Add CSS variables for all colors so switching themes only changes the root variables.",
+      "title": "Dark mode toggle for Jarvis",
+      "description": "Add a dark/light mode toggle button to the jarvis.html header. Store preference in localStorage. Use CSS custom properties so a single data-theme attribute switches all colors. Default to dark.",
       "priority": 1,
       "status": "pending",
       "category": "ui"
     },
     {
-      "id": "f002",
-      "title": "Habit categories / colors",
-      "description": "Allow users to assign a color to each habit (pick from 8 preset swatches). Display the color as a left border on each habit card. Pass color through POST /api/habits and PATCH /api/habits/:id.",
+      "id": "f009",
+      "title": "Jarvis daily brief on open",
+      "description": "When jarvis.html loads, automatically call GET /api/dashboard/summary and display a formatted morning brief as the first Jarvis message (no user input required). Show habits done today, tasks due today, and best streak. Only show if there is data — skip if no habits/tasks exist yet.",
       "priority": 2,
+      "status": "pending",
+      "category": "dashboard"
+    },
+    {
+      "id": "f010",
+      "title": "Streak milestone toasts",
+      "description": "When POST /api/habits/:id/complete causes a streak to reach 7, 14, 30, 60, or 100 days, include a milestone field in the response. In jarvis.html and index.html, show a short-lived toast notification (e.g. 'On fire — 30 day streak!'). Use an absolutely-positioned div that fades out after 4 seconds.",
+      "priority": 3,
+      "status": "pending",
+      "category": "habits"
+    },
+    {
+      "id": "f002",
+      "title": "Habit color dots in Jarvis tool cards",
+      "description": "When Jarvis calls list_habits or add_habit, render a small colored dot (using the habit's color field) next to the habit name in the tool result card in jarvis.html. The color is already stored in the DB. Update the toolResult and toolDetail rendering in jarvis.html's script section.",
+      "priority": 4,
       "status": "pending",
       "category": "habits"
     },
     {
       "id": "f003",
-      "title": "Task due-date countdown",
-      "description": "Show a human-readable countdown next to tasks that have a due_date (e.g. 'due in 2 days', 'overdue 1 day'). Highlight overdue tasks in red. Compute this in the frontend from the due_date field already stored in the DB.",
-      "priority": 3,
-      "status": "pending",
-      "category": "tasks"
-    },
-    {
-      "id": "f005",
-      "title": "Habit frequency labels",
-      "description": "Show a small badge next to each habit name indicating its frequency: 'daily', 'weekdays', or 'weekly'. Style as a subtle pill/chip using existing CSS variables.",
+      "title": "Task due-date countdown in tool cards",
+      "description": "In jarvis.html tool cards for list_tasks and add_task, show a human-readable due-date label next to tasks (e.g. 'due in 2 days', 'overdue 1 day', 'due today'). Compute client-side from the due_date field. Highlight overdue in red using CSS color variable --danger.",
       "priority": 5,
       "status": "pending",
-      "category": "habits"
+      "category": "tasks"
     },
     {
-      "id": "f006",
-      "title": "Task notes expansion",
-      "description": "Allow tasks to have multi-line notes. Add a 'expand' chevron to task cards that reveals the notes field inline. Notes are already stored in the DB; this is purely a frontend reveal/collapse using CSS height transitions.",
+      "id": "f011",
+      "title": "Conversation clear button",
+      "description": "Add a 'Clear chat' button to the jarvis.html header that calls DELETE /api/chat/history (create this endpoint in src/routes/chat.js — it deletes all rows from the messages table) then resets the chat UI to the welcome screen. Confirm with a single window.confirm before clearing.",
       "priority": 6,
       "status": "pending",
-      "category": "tasks"
+      "category": "ui"
     },
     {
       "id": "f007",
-      "title": "Streak milestone toasts",
-      "description": "When marking a habit complete causes the streak to hit 7, 14, 30, 60, or 100 days, show a toast notification (e.g. '🔥 30-day streak!'). Detect the milestone in the POST /api/habits/:id/complete response by comparing new vs old streak. Render toast in the frontend using a short-lived absolutely-positioned div.",
+      "title": "Habit completion streak in API response",
+      "description": "Modify POST /api/habits/:id/complete in src/routes/habits.js to return the updated current_streak in its response body using the existing streak calculation in src/services/habitService.js. Also return a milestone field (7, 14, 30, 60, or 100) if the new streak hits one of those values, otherwise null.",
       "priority": 7,
       "status": "pending",
-      "category": "habits"
+      "category": "backend"
     },
     {
       "id": "f008",
-      "title": "Archive completed tasks",
-      "description": "Add an 'Archive' tab (or section) under the Tasks tab showing tasks with status='done'. Add a 'Clear done' button that sets all done tasks to status='archived'. Archived tasks are hidden from the main list but accessible in the archive view.",
+      "title": "Keyboard shortcut hint and command palette",
+      "description": "In jarvis.html, add a '/' slash-command system: when user types '/' as the first character, show a small popup above the input with quick commands: /habits (list habits), /tasks (list tasks), /summary (daily brief), /clear (clear chat). Clicking a command fills the input. Use CSS position:absolute above the input area.",
       "priority": 8,
       "status": "pending",
-      "category": "tasks"
+      "category": "ui"
     }
   ],
   "completed": [
@@ -67,6 +75,16 @@
       "status": "done",
       "category": "dashboard",
       "completedAt": "2026-05-27T00:00:00.000Z",
+      "builtManually": true
+    },
+    {
+      "id": "f005",
+      "title": "Jarvis chat with Claude tool use",
+      "description": "Built full Jarvis chat interface at localhost:3000 with Claude tool-calling for habits, tasks, memory. Shows tool call cards visually.",
+      "priority": 0,
+      "status": "done",
+      "category": "ui",
+      "completedAt": "2026-06-01T00:00:00.000Z",
       "builtManually": true
     }
   ],

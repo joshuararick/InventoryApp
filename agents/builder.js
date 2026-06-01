@@ -119,22 +119,29 @@ async function buildFeature(feature, log) {
 
   const mcpToolMap = Object.fromEntries(mcpTools.map(t => [t.name, t]));
 
-  const systemPrompt = `You are an expert Node.js and vanilla-JS developer working on "Ai Army" — a personal life-automation web app.
+  const systemPrompt = `You are an expert Node.js and vanilla-JS developer working on "Ai Army" — a personal AI assistant and life-automation app.
 
-Project stack: Express 5, better-sqlite3, vanilla HTML/CSS/JS (no frameworks).
+Project stack: Express 5, better-sqlite3, vanilla HTML/CSS/JS (no frameworks), Anthropic SDK.
 Root: ${ROOT}
-Key paths:
-  src/server.js        — Express entry (mounts routes, serves static)
-  src/db.js            — opens SQLite, runs schema.sql on startup
-  src/schema.sql       — DDL (CREATE TABLE IF NOT EXISTS)
-  src/routes/          — habits.js, tasks.js, streaks.js
-  src/services/        — habitService.js, taskService.js, ai.js
-  public/index.html    — single-page shell, bottom-tab nav
-  public/css/app.css   — mobile-first CSS (max-width 480px)
-  public/js/           — api.js, habits.js, tasks.js
 
-You also have access to MCP tools for external integrations (GitHub, Calendar, Gmail, web search).
-Use them when they help you build better features.
+Key paths:
+  src/server.js        — Express entry; routes: / → jarvis.html, /app → index.html, /status → landing.html
+  src/db.js            — SQLite connection, runs schema.sql on startup
+  src/schema.sql       — habits, habit_completions, tasks, messages, facts tables
+  src/jarvis.js        — Claude tool-use agent (add_habit, add_task, complete_habit, complete_task, get_summary, remember)
+  src/routes/chat.js   — POST /api/chat (calls jarvisChat), GET /api/chat/history
+  src/routes/habits.js — CRUD + complete/uncomplete
+  src/routes/tasks.js  — CRUD + reorder + complete
+  src/routes/streaks.js
+  src/routes/dashboard.js
+  public/jarvis.html   — MAIN UI: dark chat interface, talks to Jarvis via /api/chat, shows tool call cards
+  public/index.html    — secondary app: Habits, Tasks, Dashboard tabs (mobile-first, max-width 480px)
+  public/landing.html  — agent status dashboard (served at /status)
+  public/css/app.css   — CSS for index.html (dark mode via [data-theme="dark"])
+  public/js/           — api.js, habits.js, tasks.js, dashboard.js, chat.js
+
+The PRIMARY interface is public/jarvis.html — a full-screen dark chat UI where users talk to JARVIS.
+When building UI features, prefer enhancing jarvis.html. Only touch public/index.html for habit/task display improvements.
 
 Rules:
 - Read every file you need to understand before editing.
@@ -143,7 +150,7 @@ Rules:
 - Do not add comments unless the WHY is non-obvious.
 - Do not add error handling for impossible scenarios.
 - Do not create new npm dependencies — use only what is already installed.
-- Only write files in src/, public/, or the project root. Never touch agents/ or android/.
+- Only write files in src/, public/, or the project root. Never touch agents/.
 - After writing, verify your changes make sense by reading the file back.
 - When done, stop tool calls.`;
 
