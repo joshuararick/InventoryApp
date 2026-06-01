@@ -1,96 +1,96 @@
-# CLAUDE.md
+# Ai Army
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Personal AI brain — habits, tasks, goals, and a self-building agent swarm.
 
-## Repository Structure
+## Stack
 
-This repo contains two apps:
+- **Backend:** Node.js, Express 5, better-sqlite3 (SQLite)
+- **Frontend:** Vanilla HTML/CSS/JS, mobile-first, max-width 480px
+- **Agents:** Anthropic SDK (`claude-sonnet-4-6` for building, `claude-haiku-4-5` for ideation)
+- **MCP:** `@modelcontextprotocol/sdk` — GitHub, Filesystem, Brave Search, Google Calendar, Gmail
 
-- **Root (`/`)** — **Ai Army**: a personal life-automation web app (Node.js + Express + SQLite). This is the primary active project.
-- **`android/`** — **InventoryApp**: an Android inventory management app (Java, API 16–23), preserved for future use.
-
----
-
-## Ai Army (root)
-
-### Build & Run
+## Run
 
 ```bash
 npm install
-npm start        # http://localhost:3000
-npm run dev      # with nodemon auto-reload
+npm start          # app at localhost:3000
+npm run agent      # start autonomous builder (requires ANTHROPIC_API_KEY in .env)
+npm run agent:once # run one build cycle and exit
 ```
 
-### Architecture
+## .env
 
-**Backend** (`src/`): Express 5, `better-sqlite3` (synchronous SQLite), single-user local deployment.
+```
+ANTHROPIC_API_KEY=sk-ant-...
+GITHUB_TOKEN=ghp_...             # optional: enables GitHub MCP
+BRAVE_API_KEY=...                # optional: enables web search MCP
+PORT=3000
+INTERVAL_MINUTES=30              # how often the agent builds (default 30)
+BUILDER_MODEL=claude-sonnet-4-6  # override builder model
+```
 
-- `src/server.js` — entry point; mounts all routers and serves `public/`
-- `src/db.js` — opens the SQLite connection, applies `src/schema.sql` on startup
-- `src/schema.sql` — canonical DDL; all tables use `CREATE TABLE IF NOT EXISTS`
-- `src/routes/` — `habits.js`, `tasks.js`, `streaks.js`
-- `src/services/habitService.js` — streak algorithm (frequency-aware: daily / weekdays / weekly), mark-complete logic
-- `src/services/taskService.js` — bulk priority reorder
-- `src/services/ai.js` — **Phase 2 seam**: passthrough stub, replace with Anthropic SDK calls
+## Structure
 
-**Frontend** (`public/`): Vanilla HTML/CSS/JS, mobile-first, no framework.
+```
+src/
+  server.js          — Express entry, mounts routes, serves public/
+  db.js              — SQLite connection, applies schema on startup
+  schema.sql         — DDL (CREATE TABLE IF NOT EXISTS)
+  routes/
+    habits.js        — CRUD + complete/uncomplete
+    tasks.js         — CRUD + reorder + complete
+    streaks.js       — streak summary + history
+    dashboard.js     — summary stats (habits, tasks, streaks)
+    agents.js        — agent status + MCP map
+  services/
+    habitService.js  — streak algorithm (daily/weekdays/weekly)
+    taskService.js   — bulk priority reorder
+    ai.js            — Phase 2 seam (passthrough stub)
 
-- Three tabs: Habits, Tasks, Dashboard (Dashboard is a stub for Phase 2)
-- `public/js/api.js` — thin `fetch()` wrapper used by all tab scripts
+public/
+  landing.html       — live agent dashboard (localhost:3000)
+  index.html         — app: Habits, Tasks, Dashboard tabs (localhost:3000/app)
+  css/app.css        — mobile-first styles + dark mode
+  js/
+    api.js           — fetch() wrapper
+    habits.js        — habits tab
+    tasks.js         — tasks tab
+    dashboard.js     — dashboard + agent status panel
 
-**Database** (`data/army.db`, gitignored): Three tables — `habits`, `habit_completions`, `tasks`. The `tasks` table already has `estimated_minutes` and `ai_priority_score` columns (NULL in Phase 1) so Phase 2 needs no schema migration.
+agents/
+  orchestrator.js    — main loop: picks feature, builds, tops up backlog
+  builder.js         — Claude agent with file tools + MCP tools
+  ideator.js         — generates new feature ideas (Haiku)
+  swarm.js           — 5 specialized sub-agents spawn in parallel (Haiku)
+  backlog.json       — feature queue + completed log
+  status.json        — live build state (read by dashboard)
+  mcps/
+    config.json      — MCP server configs + agent capability map
+    client.js        — MCP client (StdioClientTransport)
 
-### API Endpoints
+data/               — SQLite DB (gitignored — run mkdir data before first start)
+```
 
-| Resource | Methods |
+## API Endpoints
+
+| Route | Methods |
 |---|---|
 | `/api/habits` | GET, POST, PATCH `:id`, DELETE `:id` |
-| `/api/habits/:id/complete` | POST (mark), DELETE (unmark) |
+| `/api/habits/:id/complete` | POST, DELETE |
 | `/api/tasks` | GET `?status=`, POST, PATCH `:id`, DELETE `:id` |
-| `/api/tasks/reorder` | POST `{ ordered_ids: [...] }` |
+| `/api/tasks/reorder` | POST `{ ordered_ids }` |
 | `/api/tasks/:id/complete` | POST |
 | `/api/streaks/summary` | GET |
 | `/api/streaks/:habitId/history` | GET `?days=30` |
+| `/api/dashboard/summary` | GET |
+| `/api/agents/status` | GET |
 
-### Phase 2 Roadmap
+## Agent Swarm
 
-Claude AI integration goes in `src/services/ai.js` — the route, schema column, and calling code stay unchanged. Planned additions: task prioritization, auto-scheduler (uses `estimated_minutes`), goal decomposer, life dashboard.
+Each cycle (default 30 min):
+1. **Orchestrator** picks highest-priority pending feature from `backlog.json`
+2. **Builder** (Sonnet) reads project files, writes code, commits + pushes to GitHub
+3. **Swarm** (5 Haiku agents: UI, Backend, Habits, Tasks, Dashboard) generate new ideas in parallel
+4. **Ideator** (Haiku) tops up backlog if fewer than 5 pending features
 
-Add `ANTHROPIC_API_KEY` to a `.env` file (see `.env.example`).
-
----
-
-## InventoryApp (`android/`)
-
-Android inventory management app (Java, API 16–23) using SQLite. Built with Android Gradle Plugin 2.3.0 and Gradle 3.3.
-
-### Build & Test
-
-```bash
-cd android
-./gradlew assembleDebug
-./gradlew test
-./gradlew test --tests "com.rarick.inventoryapp.ExampleUnitTest"
-./gradlew clean
-```
-
-### Architecture
-
-Flat Activity-based structure — no fragments, no ViewModel, no Repository layer.
-
-- `DBContract` → SQLite schema constants and CREATE/DROP SQL
-- `DBHandler` (`SQLiteOpenHelper`) → all CRUD, returns `ArrayList<Inventory>`
-- `Inventory` → plain model (id, productName, quantity, price); `quantitySale()` decrements quantity (floor 0)
-- Activities call `DBHandler` directly
-
-Activity flow: `MainActivity` (ListView via `ListViewAdapter`) → `ItemFullDisplayActivity` (detail, delete, order-more email) / `AddNewItem` (insert + gallery image pick).
-
-**Image storage:** saved to `filesDir/<rowCount+1>` at add-time, read back as `filesDir/<id-1>`. This off-by-one must be preserved.
-
-### Known Gotchas
-
-- Manifest `package="com.Rarick.inventoryapp"` (capital R) vs `applicationId "com.samsrutidash.inventoryapp"` vs test package `com.rarick.inventoryapp` — keep as-is.
-- `KEY_IMAGE` column exists in schema but is never written by `addItem` or `updateHabitRow`.
-- `DATABASE_VERSION = 1` — any schema change needs a version bump; current `onUpgrade` drops and recreates (data loss).
-- `ListViewAdapter` calls `notifyDataSetChanged()` inside `getView()` — legacy pattern, don't worsen it.
-- `ItemFullDisplayActivity.onSubmitMore` hardcodes `workOrderMore@gmail.com` and sender name `Samsruti`.
+MCP tools injected per agent type from `agents/mcps/config.json`.
