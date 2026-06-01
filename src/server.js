@@ -1,3 +1,4 @@
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const express = require('express');
 const path = require('path');
 const errorHandler = require('./middleware/errorHandler');
@@ -16,6 +17,7 @@ app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/streaks', require('./routes/streaks'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/agents', require('./routes/agents'));
+app.use('/api/chat', require('./routes/chat'));
 
 app.use('/api/{*path}', (req, res) => res.status(404).json({ error: 'Not found' }));
 app.use(errorHandler);

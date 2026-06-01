@@ -55,6 +55,19 @@
     <div id="task-list"></div>
   </div>
 
+  <!-- ── Chat Tab ── -->
+  <div class="tab-content" id="tab-chat">
+    <div class="section-header chat-section-header">
+      <h2>Jarvis</h2>
+      <span style="font-size:12px;color:var(--gray-400);">AI Assistant</span>
+    </div>
+    <div id="chat-messages"><div class="chat-empty">Ask Jarvis anything about your habits, tasks, or goals.</div></div>
+    <div class="chat-input-area">
+      <textarea id="chat-input" placeholder="Message Jarvis..." rows="1" onkeydown="handleChatKeydown(event)"></textarea>
+      <button class="chat-send-btn" id="chat-send-btn" onclick="sendMessage()">&#8593;</button>
+    </div>
+  </div>
+
   <!-- ── Dashboard Tab ── -->
   <div class="tab-content" id="tab-dashboard">
     <div class="section-header">
@@ -101,6 +114,9 @@
     <button onclick="switchTab('tasks', this)">
       <span class="icon">✅</span>Tasks
     </button>
+    <button onclick="switchTab('chat', this)">
+      <span class="icon">💬</span>Chat
+    </button>
     <button onclick="switchTab('dashboard', this)">
       <span class="icon">📊</span>Dashboard
     </button>
@@ -119,6 +135,7 @@
 <script src="/js/api.js"></script>
 <script src="/js/habits.js"></script>
 <script src="/js/tasks.js"></script>
+<script src="/js/chat.js"></script>
 <script src="/js/dashboard.js"></script>
 <script>
   // Set today's date in header
@@ -131,6 +148,7 @@
     document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
     document.getElementById('tab-' + name).classList.add('active');
     btn.classList.add('active');
+    if (name === 'chat') loadChatHistory();
   }
 
   function toggleTheme() {

@@ -34,3 +34,10 @@ CREATE INDEX IF NOT EXISTS idx_completions_habit_date
 
 CREATE INDEX IF NOT EXISTS idx_tasks_status_priority
     ON tasks (status, priority);
+
+CREATE TABLE IF NOT EXISTS messages (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    role        TEXT    NOT NULL,
+    content     TEXT    NOT NULL,
+    created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+);
