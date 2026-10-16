@@ -1,4 +1,4 @@
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+require('dotenv').config({ path: [require('path').resolve(__dirname, '../.env'), require('path').join(require('os').homedir(), '.secrets', 'api-keys.env')] });
 const express = require('express');
 const path = require('path');
 const errorHandler = require('./middleware/errorHandler');

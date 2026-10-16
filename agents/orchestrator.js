@@ -13,7 +13,7 @@
  *   INTERVAL_MINUTES=60 node agents/orchestrator.js
  */
 
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+require('dotenv').config({ path: [require('path').resolve(__dirname, '../.env'), require('path').join(require('os').homedir(), '.secrets', 'api-keys.env')] });
 
 if (!process.env.ANTHROPIC_API_KEY) {
   console.error('[orchestrator] ANTHROPIC_API_KEY not set. Add it to .env and restart.');
